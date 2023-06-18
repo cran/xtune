@@ -1,6 +1,6 @@
 #' Calculate mean square error
 #'
-#' \code{mse} calculate mean square error (MSE) between prediction values and true values
+#' \code{mse} calculate mean square error (MSE) between prediction values and true values for linear model
 #' @param pred Prediction values vector
 #' @param true Actual values vector
 #' @return mean square error

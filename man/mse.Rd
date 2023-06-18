@@ -15,7 +15,7 @@ mse(pred, true)
 mean square error
 }
 \description{
-\code{mse} calculate mean square error (MSE) between prediction values and true values
+\code{mse} calculate mean square error (MSE) between prediction values and true values for linear model
 }
 \examples{
 Y1 <- rnorm(10,0,1)

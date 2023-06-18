@@ -4,30 +4,45 @@
 \alias{xtune.control}
 \title{Control function for xtune fitting}
 \usage{
-xtune.control(alpha.init = NULL, maxstep = 100, tolerance = 0.001,
-  maxstep_inner = 50, tolerance_inner = 0.1, compute.likelihood = FALSE,
-  verbosity = FALSE, standardize = TRUE, intercept = TRUE)
+xtune.control(
+  alpha.est.init = NULL,
+  max_s = 20,
+  margin_s = 1e-05,
+  maxstep = 100,
+  margin = 0.001,
+  maxstep_inner = 100,
+  margin_inner = 0.001,
+  compute.likelihood = FALSE,
+  verbosity = FALSE,
+  standardize = TRUE,
+  intercept = TRUE
+)
 }
 \arguments{
-\item{alpha.init}{initial values of alpha vector supplied to the algorithm.
-alpha values are the hyper-parameters for the double exponential prior of regression coefficients,
- and it controls the prior variance of regression coefficients. Default is a vector of 0 with length p.}
+\item{alpha.est.init}{Initial values of alpha vector supplied to the algorithm. Alpha values are the hyper-parameters for the double exponential prior of regression coefficients, and it controls the prior variance of regression coefficients. Default is a vector of 0 with length p.}
+
+\item{max_s}{Maximum number of outer loop iterations for binary or multiclass outcomes. Default is 20.}
+
+\item{margin_s}{Convergence threshold of the outer loop for binary or multiclass outcomes. Default is 1e-5.}
 
 \item{maxstep}{Maximum number of iterations. Default is 100.}
 
-\item{tolerance}{Convergence threshold. Default is 1e-4.}
+\item{margin}{Convergence threshold. Default is 1e-3.}
 
-\item{maxstep_inner}{Maximum number of iterations for the inner loop of the majorization-minimization algorithm.}
+\item{maxstep_inner}{Maximum number of iterations for the inner loop of the majorization-minimization algorithm. Default is 100.}
 
-\item{tolerance_inner}{Convergence threshold for the inner loop of the majorization-minimization algorithm.}
+\item{margin_inner}{Convergence threshold for the inner loop of the majorization-minimization algorithm. Default is 1e-3.}
 
 \item{compute.likelihood}{Should the function compute the marginal likelihood for hyper-parameters at each step of the update? Default is TRUE.}
 
 \item{verbosity}{Track algorithm update process? Default is FALSE.}
 
-\item{standardize}{Standardize X or not, same as the standardized option in glmnet}
+\item{standardize}{Standardize X or not, same as the standardized option in \code{glmnet}.}
 
-\item{intercept}{Should intercept(s) be fitted (default=TRUE) or set to zero (FALSE), same as the intercept option in glmnet}
+\item{intercept}{Should intercept(s) be fitted (default=TRUE) or set to zero (FALSE), same as the intercept option in \code{glmnet}.}
+}
+\value{
+A list of control objects after the checking.
 }
 \description{
 Control function for \code{\link{xtune}} fitting.

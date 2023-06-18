@@ -4,12 +4,14 @@
 \name{diet}
 \alias{diet}
 \title{Simulated diet data to predict weight loss}
-\format{The \code{diet} object is a list containing three elements:
+\format{
+The \code{diet} object is a list containing three elements:
 \itemize{
 \item DietItems: Matrix of predictors.
 \item weightloss: 0: no weight loss; 1: weight loss
 \item nutritionFact: External information of the predictors
-}}
+}
+}
 \usage{
 data(diet)
 }
@@ -23,7 +25,7 @@ data(diet)
 X <- diet$DietItems
 Y <- diet$weightloss
 Z <- diet$nutritionFact
-\donttest{fit <- xtune(X,Y,Z)}
+\donttest{fit <- xtune(X,Y,Z, family = "binary")}
 \donttest{fit$penalty.vector}
 }
 \references{

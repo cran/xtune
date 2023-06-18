@@ -2,7 +2,7 @@
 % Please edit documentation in R/estimate_variance.R
 \name{estimateVariance}
 \alias{estimateVariance}
-\title{Estimate noise variance given predictor X and response Y.}
+\title{Estimate noise variance given predictor X and continuous outcome Y.}
 \usage{
 estimateVariance(X, Y, n_rep = 5)
 }
@@ -12,6 +12,9 @@ estimateVariance(X, Y, n_rep = 5)
 \item{Y}{continuous outcome vector of length \eqn{n}.}
 
 \item{n_rep}{number of repeated estimation. Default is 10.}
+}
+\value{
+Estimated noise variance of X and Y.
 }
 \description{
 \code{estimateVariance} estimate noise variance.

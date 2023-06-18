@@ -18,9 +18,9 @@
 #' @seealso \code{\link{diet}}
 #' @examples
 #' data(gene)
-#' X <- gene$geneItems
-#' Y <- gene$weightloss
-#' Z <- gene$NuitritionFact
+#' X <- gene$GeneExpression
+#' Y <- gene$bonedensity
+#' Z <- gene$PreviousStudy
 #' \donttest{fit <- xtune(X,Y,Z)}
 #' \donttest{fit$penalty.vector}
 "gene"

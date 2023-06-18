@@ -23,6 +23,6 @@
 #' X <- diet$DietItems
 #' Y <- diet$weightloss
 #' Z <- diet$nutritionFact
-#' \donttest{fit <- xtune(X,Y,Z)}
+#' \donttest{fit <- xtune(X,Y,Z, family = "binary")}
 #' \donttest{fit$penalty.vector}
 "diet"

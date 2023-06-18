@@ -4,12 +4,14 @@
 \name{gene}
 \alias{gene}
 \title{Simulated gene data to predict weight loss}
-\format{The \code{gene} object is a list containing three elements:
+\format{
+The \code{gene} object is a list containing three elements:
 \itemize{
 \item GeneExpression: Matrix of gene expression predictors.
 \item bonedensity: Continuous outcome variable
 \item PreviousStudy: Whether each gene is identified by previous study results.
-}}
+}
+}
 \usage{
 data(gene)
 }
@@ -19,9 +21,9 @@ and an continuous outcome, bone mineral density. The external information Z is f
 }
 \examples{
 data(gene)
-X <- gene$geneItems
-Y <- gene$weightloss
-Z <- gene$NuitritionFact
+X <- gene$GeneExpression
+Y <- gene$bonedensity
+Z <- gene$PreviousStudy
 \donttest{fit <- xtune(X,Y,Z)}
 \donttest{fit$penalty.vector}
 }

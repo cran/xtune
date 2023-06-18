@@ -1,10 +1,10 @@
 ---
 title: "Getting started with `xtune`"
-author: "Chubing Zeng"
+author: "Jingxuan He and Chubing Zeng"
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteIndexEntry{Tutorials_for_xtune}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 ```
 ### Purpose of this vignette
 
-This vignette is a tutorial on how to use the `xtune` package to fit differential-shrinkage penalized regression models based on external information. 
+This vignette is a tutorial on how to use the `xtune` package to fit feature-specific regularized regression models based on external information. 
 
 In this tutorial the following points are going to be viewed: 
 
@@ -27,28 +27,24 @@ In this tutorial the following points are going to be viewed:
 * Two special cases of Z
 
 ### `xtune` Overview
-The main usage of `xtune` is to tune multiple shrinkage parameters in Lasso and Ridge regression, based on external information. 
+The main usage of `xtune` is to tune multiple shrinkage parameters in regularized regressions (Lasso, Ridge, and Elastic-net), based on external information. 
 
 The classical penalized regression uses a single penalty parameter $\lambda$ that applies equally to all regression coefficients to control the amount of regularization in the model. And the single penalty parameter tuning is typically performed using cross-validation. 
 
 Here we apply an individual shrinkage parameter $\lambda_j$ to each regression coefficient $\beta_j$. And the vector of shrinkage parameters $\lambda s = (\lambda_1,...,\lambda_p)$ is guided by external information $Z$. In specific, $\lambda$s is modeled as a log-linear function of $Z$. Better prediction accuracy for penalized regression models may be achieved by allowing individual shrinkage for each regression coefficients based on external information. 
 
-To tune the differential shrinkage parameter vector $\lambda s = (\lambda_1,...,\lambda_p)$, we employ an Empirical Bayes approach by specifying LASSO and Ridge to their random-effect formulation. Once the tuning parameters $\lambda$s are estimated, and therefore the penalties known, the regression coefficients are obtained using the `glmnet` package.
+To tune the differential shrinkage parameter vector $\lambda s = (\lambda_1,...,\lambda_p)$, we employ an Empirical Bayes approach by specifying Elastic-net to their random-effect formulation. Once the tuning parameters $\lambda$s are estimated, and therefore the penalties known, the regression coefficients are obtained using the `glmnet` package.
 
-The response variable can be either quantitative or a factor with two levels. For a binary response variable, a sparse LDA procedure is used to get the fisher discriminant direction and the discriminant function for a new data point.
-
-The sparse LDA procedure is described in this paper: 
-
-Mai, Qing & Zou, Hui & Yuan, Ming. (2012). A direct approach to sparse discriminant analysis in ultra-high dimensions. Biometrika. 99. 10.2307/41720670. 
-
-Utilities for carrying out post-fitting summarization and prediction are also provided.
+The response variable can be either quantitative or categorical. Utilities for carrying out post-fitting summary and prediction are also provided.
 
 ### Examples 
-This file uses three simulated examples to illustrate the usage and syntax of `xtune`. The first example gives users a general sense of the data structure and model fitting process. The second and third examples use simulated data in concrete scenarios to illustrate the usage of the package. In the second example `diet`, we provide simulated data to mimic the dietary example described in this paper: 
+Here, we four simulated examples to illustrate the usage and syntax of `xtune`. The first example gives users a general sense of the data structure and model fitting process. The second and third examples use simulated data in concrete scenarios to illustrate the usage of the package. In the second example `diet`, we provide simulated data to mimic the dietary example described in this paper: 
 
 S. Witte, John & Greenland, Sander & W. Haile, Robert & L. Bird, Cristy. (1994). Hierarchical Regression Analysis Applied to a Study of Multiple Dietary Exposures and Breast Cancer. Epidemiology (Cambridge, Mass.). 5. 612-21. 10.1097/00001648-199411000-00009. 
 
-And in the third example `gene`, we provide simulated data to mimic the bone density data published in the European Bioinformatics Institute (EMBL-EBI) ArrayExpress repository, ID: E-MEXP-1618. 
+In the third example `gene`, we provide simulated data to mimic the bone density data published in the European Bioinformatics Institute (EMBL-EBI) ArrayExpress repository, ID: E-MEXP-1618. 
+
+And in the fourth example, we simulated data with multicategorical outcomes with three levels to provide the multi-classification example using `xtune`.
 
 
 #### General Example
@@ -72,10 +68,10 @@ Here, each variable in Z is a binary variable. $Z_{jk}$ indicates if $Predictor_
 
 To fit a differential-shrinkage lasso model to this data:
 ```{r fit1}
-fit.example1 <- xtune(X,Y,Z)
+fit.example1 <- xtune(X,Y,Z, family = "linear", c = 1)
 ```
 
-The individual penalty parameters are returned by 
+Here, we specify the family of the model using the linear response and the LASSO type of penalty by assign $c = 1$. The individual penalty parameters are returned by 
 
 ```
 fit.example1$penalty.vector
@@ -90,8 +86,8 @@ unique(fit.example1$penalty.vector)
 Coefficient estimates and predicted values and can be obtained via `predict` and `coef`:
 
 ```
-coef(fit.example1)
-predict(fit.example1, newX = X)
+coef_xtune(fit.example1)
+predict_xtune(fit.example1, newX = X)
 ```
 
 The `mse` function can be used to get the mean square error (MSE) between prediction values and true values. 
@@ -117,10 +113,10 @@ In this example, Z is not a grouping of the predictors. The idea is that the nut
 
 Similar to the previous example, the xtune model could be fit by: 
 ```{r exfit}
-fit.diet = xtune(X = diet$DietItems,Y=diet$weightloss,Z = diet$NuitritionFact, family="binary")
+fit.diet = xtune(X = diet$DietItems,Y=diet$weightloss,Z = diet$NuitritionFact, family="binary", c = 0)
 ```
 
-Each dietary predictor is estimated an individual tuning parameter based on their nutrition fact. 
+Here, we use the Ridge model by specifying $c = 0$. Each dietary predictor is estimated an individual tuning parameter based on their nutrition fact. 
 
 ```{r indiv}
 fit.diet$penalty.vector
@@ -128,13 +124,13 @@ fit.diet$penalty.vector
 
 To make prediction using the trained model
 ```
-predict(fit.diet,newX = diet$DietItems)
+predict_xtune(fit.diet,newX = diet$DietItems)
 ```
 
-The above code returns the predicted probabilities (scores). To make a class prediction, use the `type = "class"` option and also provide the original X and Y used for the fit.
+The above code returns the predicted probabilities (scores). To make a class prediction, use the `type = "class"` option.
 
 ```
-pred_class <- predict(fit.diet,newX = diet$DietItems,type = "class",X = diet$DietItems,Y=diet$weightloss)
+pred_class <- predict_xtune(fit.diet,newX = diet$DietItems,type = "class")
 ```
 
 The `misclassification()` function can be used to extract the misclassification rate. The prediction AUC can be calculated using the auc() function from the AUC package. 
@@ -157,10 +153,50 @@ A gene can be identified to be important by several previous study results, ther
 
 Model fitting:
 ```
-fit.gene = xtune(X = gene$GeneExpression,Y=gene$bonedensity,Z = gene$PreviousStudy)
+fit.gene = xtune(X = gene$GeneExpression,Y=gene$bonedensity,Z = gene$PreviousStudy, family  = "linear", c = 0.5)
 ```
 
-The rest of the steps are the same as the previous two examples. 
+We use the Elastic-net model by specifying $c = 0.5$ (can be any numerical value from 0 to 1). The rest of the steps are the same as the previous two examples. 
+
+
+
+#### Multi-classification data example
+
+```{r multiclass}
+data("example.multiclass")
+dim(example.multiclass$X); dim(example.multiclass$Y); dim(example.multiclass$Z)
+head(example.multiclass$X)[,1:5]
+head(example.multiclass$Y)
+head(example.multiclass$Z)
+```
+
+Model fitting:
+```{r}
+fit.multiclass = xtune(X = example.multiclass$X,Y=example.multiclass$Y,Z = example.multiclass$Z, U = example.multiclass$U, family  = "multiclass", c = 0.5)
+
+# check the tuning parameter
+fit.multiclass$penalty.vector
+```
+
+To make prediction using the trained model:
+```{r}
+pred.prob = predict_xtune(fit.multiclass,newX = cbind(example.multiclass$X, example.multiclass$U))
+head(pred.prob)
+```
+
+The above code returns the predicted probabilities (scores) for each class. To make a class prediction, specify the argument `type = "class"`.
+
+```{r}
+pred.class <- predict_xtune(fit.multiclass,newX = cbind(example.multiclass$X, example.multiclass$U), type = "class")
+head(pred.class)
+```
+
+The `misclassification()` function can be used to extract the misclassification rate. The multiclass AUC can be calculated using the `multiclass.roc` function from the `pROC` package. 
+
+```{r}
+misclassification(pred.class,true = example.multiclass$Y)
+```
+
 
 ### Two special cases
 #### No external information Z
@@ -168,7 +204,7 @@ If you just want to tune a single penalty parameter using empirical Bayes tuning
 If no external information Z is provided, the function will perform empirical Bayes tuning to choose the single penalty parameter in penalized regression, as an alternative to cross-validation. For example
 
 ```{r sp1}
-fit.eb <- xtune(X,Y)
+fit.eb <- xtune(X,Y, family = "linear", c = 0.5)
 ```
 The estimated tuning parameter is: 
 ```
@@ -182,7 +218,7 @@ Using the dietary example, the following code would estimate a separate penalty 
 ```{r sp2}
 
 Z_iden = diag(ncol(diet$DietItems))
-fit.diet.identity = xtune(diet$DietItems,diet$weightloss,Z_iden)
+fit.diet.identity = xtune(diet$DietItems,diet$weightloss,Z_iden, family = "binary", c = 0.5)
 ```
 
 ```{r sp22}
@@ -192,6 +228,6 @@ fit.diet.identity$penalty.vector
 A predictor is excluded from the model (regression coefficient equals to zero) if its corresponding penalty parameter is estimated to be infinity. 
 
 ### Conclusion
-We presented the main usage of `xtune` package. For more details about each function, please go check the package documentation. If you would like to give us feedback or report issue, please tell us on [Github](https://github.com/ChubingZeng/xtune). 
+We presented the main usage of `xtune` package. For more details about each function, please go check the package documentation. If you would like to give us feedback or report issue, please tell us on [Github](https://github.com/JingxuanH/xtune). 
 
 

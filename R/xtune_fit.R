@@ -1,107 +1,66 @@
-#' @import glmnet
-#' @importFrom stats optim
-xtune.fit <- function(X, Y, Z, sigma.square, method, alpha.init, maxstep, tolerance,
-                      maxstep_inner, tolerance_inner, compute.likelihood, verbosity, standardize = standardize,
+#' @import glmnet crayon selectiveInference
+#' @importFrom stats optim coef var predict
+xtune.fit <- function(X, Y, Z, U, c, epsilon, sigma.square, alpha.est.init, maxstep, margin,
+                      maxstep_inner, margin_inner, compute.likelihood, verbosity, standardize = standardize,
                       intercept = intercept) {
 
         n = nrow(X)
         p = ncol(X)
-        q = ncol(Z)
 
-        if (method == "lasso") {
-                ##------------ extending lasso regression
-                ## Initialize
-                alpha.old = alpha.init
-                likelihood.score = c()
-                k = 1
-                while (k < maxstep) {
-                        # Given alpha, update theta
-                        gamma = 2 * exp(-2 * Z %*% alpha.old)  ## variance of beta in the approximated model
-                        Sigma_y = sigma.square * diag(n) + (t(t(X) * c(gamma))) %*% t(X)
-                        theta = colSums(X * solve(Sigma_y, X))
+        ##------------ Elastic-net regression
+        ## Initialize
+        alpha.old = alpha.est.init
+        likelihood.score = c()
+        s = 1
 
-                        # Compute likelihood
-                        if (compute.likelihood == TRUE) {
-                                likelihood.score = c(likelihood.score, approx_likelihood.lasso(alpha.old,
-                                                                                               X, Y, Z, sigma.square))
-                        }
+        ## calculate alpha.max
+        alpha.max = max(abs(colSums(X*as.vector(Y))))/ (c * n)
 
-                        # Given theta, update alpha
-                        update.result <- update_alpha.lasso(X, Y, Z, alpha.old = alpha.old,
-                                                            sigma.square = sigma.square, theta = theta, maxstep_inner = maxstep_inner,
-                                                            tolerance_inner = tolerance_inner)
-                        alpha.new <- update.result$alpha.est
+        ## start estimation
+        cat(yellow$italic$bold("Start estimating alpha:\n"))
+        while(s < maxstep){
+                # Given alpha, update theta
+                lambda = exp(Z%*%alpha.old)
+                gamma = 2/(lambda^2*c^2 + 2*lambda*(1-c))
+                Sigma_y = sigma.square * diag(n) + (t(t(X) * c(gamma))) %*% t(X)
+                theta = colSums(X * solve(Sigma_y, X))
 
-                        # Check convergence
-                        if (sum(abs(alpha.new - alpha.old)) < tolerance) {
-                                break
-                        }
-                        alpha.old <- alpha.new
-
-                        # Track iteration progress
-                        if (verbosity == TRUE) {
-                                cat("#-----------------Iteration ", k, " Done -----------------#\n",
-                                    sep = "")
-                        }
-                        k <- k + 1
+                # Compute likelihood
+                if (compute.likelihood == TRUE) {
+                        likelihood.score = c(likelihood.score, approx_likelihood.xtune(alpha.old,
+                                                                                    X, Y, Z, sigma.square, c))
                 }
-                tauEst = exp(Z %*% alpha.old)
-                pen_vec = tauEst * sigma.square/n
 
-                pen_vec[pen_vec > 1e3] <- Inf
-                C = ifelse(is.nan(mean(pen_vec[pen_vec!=Inf])),1e5,mean(pen_vec[pen_vec!=Inf]))
+                # Given theta, update alpha
+                update.result <- update_alpha.xtune(X, Y, Z,c=c, alpha.old = alpha.old, alpha.max = alpha.max, epsilon = epsilon,
+                                                 sigma.square = sigma.square, theta = theta, maxstep_inner = maxstep_inner,
+                                                 margin_inner = margin_inner, verbosity = verbosity)
+                alpha.new <- update.result$alpha.est
 
-                obj <- glmnet(X, Y, alpha = 1,family="gaussian",standardize = standardize, intercept = intercept)
-                cus.coef <- coef(obj,x=X,y=Y,exact=TRUE,s= C, penalty.factor = pen_vec,standardize=standardize,intercept = intercept)
-
-        }
-        if (method == "ridge") {
-                ##---------- ridge regression
-                ## Initialize
-                alpha.old = alpha.init
-                likelihood.score = c()
-                k = 1
-                while (k < maxstep) {
-                        # Given alpha, update theta
-                        gamma = exp(-Z %*% alpha.old)  ## gamma is the variance of beta in this vase
-                        Sigma_y = sigma.square * diag(n) + (t(t(X) * c(gamma))) %*% t(X)
-                        theta = colSums(X * solve(Sigma_y, X))
-
-                        # Compute likelihood
-                        if (compute.likelihood == TRUE) {
-                                likelihood.score = c(likelihood.score, approx_likelihood.ridge(alpha.old,
-                                                                                               X, Y, Z, sigma.square))
-                        }
-
-                        # Given theta, update alpha
-                        update.result <- update_alpha.ridge(X, Y, Z, alpha.old = alpha.old,
-                                                            sigma.square = sigma.square, theta = theta, maxstep_inner = maxstep_inner,
-                                                            tolerance_inner = tolerance_inner)
-                        alpha.new <- update.result$alpha.est
-
-                        # Check convergence
-                        if (sum(abs(alpha.new - alpha.old)) < tolerance) {
-                                break
-                        }
-                        alpha.old <- alpha.new
-
-                        # Track iteration progress
-                        if (verbosity == TRUE) {
-                                cat("#-----------------Iteration ", k, " Done -----------------#\n",
-                                    sep = "")
-                        }
-                        k <- k + 1
+                # Check convergence
+                if (sum(abs(alpha.new - alpha.old)) < margin) {
+                        cat(red$bold("Done!\n"))
+                        break
                 }
-                gamma = exp(-Z %*% alpha.old)
-                pen_vec = 1/gamma * sigma.square/n
+                alpha.old <- alpha.new
 
-                pen_vec[pen_vec > 1e3] <- Inf
-                C = ifelse(is.nan(mean(pen_vec[pen_vec!=Inf])),1e5,mean(pen_vec[pen_vec!=Inf]))
-
-                obj <- glmnet(X, Y, alpha = 0,family="gaussian",standardize = standardize, intercept = intercept)
-                cus.coef <- coef(obj,x=X,y=Y,exact=TRUE,s= C, penalty.factor = pen_vec,standardize=standardize,intercept = intercept)
-
+                # Track iteration progress
+                if (verbosity == TRUE) {
+                        cat(green$italic("#---"),green$bold("Outer loop Iteration",s,"Done"),green$italic("---#\n"),sep = "")
+                }
+                s <- s + 1
         }
-        return(list(beta.est = cus.coef, penalty.vector = pen_vec, lambda = C, alpha.est = alpha.old, method=method,
-                    n_iter = k - 1, sigma.square = sigma.square, likelihood.score = likelihood.score))
+
+        tauEst = exp(Z%*%alpha.old)
+        pen_vec = tauEst * sigma.square/n
+        pen_vec[pen_vec>1e6] <- 1e6
+
+        if(is.null(U)) {pen_vec_cov = pen_vec} else {pen_vec_cov = c(pen_vec, rep(0,ncol(U)))}
+        C = sum(pen_vec_cov)/p
+
+        obj <- glmnet(cbind(X, U), Y, alpha = c,family="gaussian",lambda = C, penalty.factor = pen_vec_cov, standardize = standardize, intercept = intercept)
+        cus.coef <- coef(obj,x=cbind(X, U),y=Y,alpha = c, exact=TRUE,s= C, penalty.factor = pen_vec_cov,standardize=standardize,intercept = intercept)
+
+        return(list(model = obj, beta.est = cus.coef, penalty.vector = pen_vec_cov, lambda = C, alpha.est = alpha.old,
+                    n_iter = s - 1, sigma.square = sigma.square, likelihood.score = likelihood.score))
 }

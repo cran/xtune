@@ -4,12 +4,14 @@
 \name{example}
 \alias{example}
 \title{An simulated example dataset}
-\format{The \code{example} object is a list containing three elements:
+\format{
+The \code{example} object is a list containing three elements:
 \itemize{
 \item X: A simulated 100 by 200 matrix
 \item Y: Continuous response vector of length 100
 \item Z: A 200 by 3 matrix. Z_jk indicates whether predictor X_j has external variable Z_k or not.
-}}
+}
+}
 \usage{
 data(example)
 }

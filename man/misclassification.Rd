@@ -12,7 +12,7 @@ misclassification(pred, true)
 \item{true}{Actual class}
 }
 \value{
-misclassification error
+Misclassification error for binary or multiclass outcome.
 }
 \description{
 \code{misclassification} calculate misclassification error between predicted class and true class
@@ -21,4 +21,7 @@ misclassification error
 Y1 <- rbinom(10,1,0.5)
 Y2 <- rnorm(10,1,0.5)
 misclassification(Y1,Y2)
+}
+\seealso{
+To calculate the Area Under the Curve (AUC) for binary or multiclass outcomes, please refer to the \code{pROC}.
 }

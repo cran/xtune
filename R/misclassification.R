@@ -3,7 +3,8 @@
 #' \code{misclassification} calculate misclassification error between predicted class and true class
 #' @param pred Predicted class
 #' @param true Actual class
-#' @return misclassification error
+#' @return Misclassification error for binary or multiclass outcome.
+#' @seealso To calculate the Area Under the Curve (AUC) for binary or multiclass outcomes, please refer to the \code{pROC}.
 #' @examples
 #' Y1 <- rbinom(10,1,0.5)
 #' Y2 <- rnorm(10,1,0.5)
